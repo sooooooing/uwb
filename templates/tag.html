@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<style>
+    #map {
+        width: 1155px;
+        height: 585px;
+        position: relative;
+    }
+
+    .point {
+        position: absolute;
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        background: red;
+        border-radius: 50%;
+    }
+
+    .triangle {
+        position: absolute;
+        width: 0px;
+        height: 0px;
+        border-bottom: calc(10px * 1.732) solid blueviolet;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        margin-bottom: 10px;
+
+    }
+    .text {
+        position: absolute;
+        display: inline-block;
+        margin-top: 15px;
+        font-size: 15px;
+        min-width: 120px;
+        white-space: nowrap;
+        margin-left: -30px;
+    }
+    .tag {
+        position: absolute;
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        background: orange;
+        border-radius: 50%;
+    }
+
+</style>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>map</title>
+</head>
+
+
+<body>
+  <h2>테스트베드 배치도 (11.55, 5.85)</h2>
+
+  <div id="map">
+      <img alt="Map 이미지" height="585" src="/static/map.png" width="1155">
+      <!--앵커 좌표 찍기-->
+
+      <div class="point" id="anc0" style="left: 45px; bottom: 145px;">
+          <h5 class="text">ANC0(0.45, 1.45)</h5>
+      </div>
+      <div class="point" id="anc3" style="left: 705px; bottom: 585px;">
+          <h5 class="text">ANC3(7.05, 5.85)</h5>
+      </div>
+      <div class="point" id="anc4" style="left: 1155px; bottom: 300px;">
+          <h5 class="text">ANC4(11.55, 3.0)</h5>
+      </div>
+      <div class="point" id="anc6" style="left: 705px; bottom: 0px;">
+          <h5 class="text">ANC6(7.05, 0)</h5>
+      </div>
+
+      <!--ground truth 좌표찍기-->
+      <div class="triangle" id="gt1" style="left: 90px; bottom: 495px;">
+          <h5 class="text">(0.9, 4.95)</h5>
+      </div>
+
+      <div class="triangle" id="gt2" style="left: 135px; bottom: 180px;">
+          <h5 class="text">(1.35, 1.8)</h5>
+      </div>
+
+      <div class="triangle" id="gt3" style="left: 360px; bottom: 270px;">
+          <h5 class="text">(3.6, 2.7)</h5>
+      </div>
+
+      <div class="triangle" id="gt4" style="left: 630px; bottom: 315px;">
+          <h5 class="text">(6.3, 3.15)</h5>
+      </div>
+
+      <div class="triangle" id="gt5" style="left: 900px; bottom: 270px;">
+          <h5 class="text">(9.0, 2.7)</h5>
+      </div>
+
+      <div class="triangle" id="gt6" style="left: 1035px; bottom: 270px;">
+          <h5 class="text">(10.35, 2.7)</h5>
+      </div>
+
+      <!--동적으로 받아오는 태그의 위치 계속 표시-->
+      <div class="tag" style="left: 100px; bottom: 100px;">
+          <h5 class="text">TAG</h5>
+      </div>
+  </div>
+</body>
+
+<script>
+  const tagEl = document.querySelector(".tag");
+
+  tagEl.style.display = "none";
+
+  const SCALE = 100;
+  const DOT_R = 7.5;
+  const MAP_W_M = 11.55, MAP_H_M = 5.85;
+
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function updateMarker(x, y) {
+
+  x = Number(x);
+  y = Number(y);
+
+  if (Number.isNaN(x) || Number.isNaN(y)) {
+    console.warn("invalid coords:", x, y);
+    return;
+  }
+  if (x < 0 || y < 0) return;
+
+
+  x = clamp(x, 0, MAP_W_M);
+  y = clamp(y, 0, MAP_H_M);
+  const leftPx = x * SCALE - DOT_R;
+  const bottomPx = y * SCALE - DOT_R;
+
+
+  if (tagEl.style.display === "none") tagEl.style.display = "block";
+
+
+  tagEl.style.left = `${leftPx}px`;
+  tagEl.style.bottom = `${bottomPx}px`;
+
+
+  console.log("draw @px:", leftPx, bottomPx, " @m:", x, y);
+}
+
+  // SSE
+  const es = new EventSource('/sse/tag');
+  es.addEventListener("tag", (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      updateMarker(data.x, data.y);
+    } catch (e) { console.warn("bad data", ev.data); }
+  });
+
+  es.onerror = () => console.log("SSE 연결 끊김");
+</script>
+
