@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import suppress, asynccontextmanager
+from pathlib import Path
 from typing import Tuple, Dict, List
 import uuid
 import paho.mqtt.client as mqtt
@@ -11,7 +12,7 @@ from config.database import SessionLocal, engine, Base
 
 from starlette.responses import HTMLResponse, StreamingResponse
 from starlette.templating import Jinja2Templates
-from datetime import datetime
+from fastapi.staticfiles import StaticFiles
 
 # mqtt 관련 설정
 BROKER_HOST = "168.188.128.103"   # 예: "broker.example.com" 또는 "127.0.0.1"
@@ -20,6 +21,11 @@ USERNAME = "test"
 PASSWORD = "1234"
 CLIENT_ID = f"esp32-{uuid.uuid4().hex[:8]}"
 
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+print(BASE_DIR)
+TEMPLATE_DIR = BASE_DIR.parent / "templates"
+STATIC_DIR = BASE_DIR.parent / "static"
 
 TOPICS = [
     ("/test", 0)      # 예시 토픽과 QoS. 필요에 맞게 변경         # 모든 토픽 구독 (테스트용)
@@ -50,8 +56,9 @@ async def lifespan(app: FastAPI):
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(lifespan=lifespan)
-templates = Jinja2Templates(directory="templates")
 subscribers = set()
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 
@@ -61,6 +68,8 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
 @app.get("/")
 async def get_map(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -178,13 +187,13 @@ def trilaterate(anchors: List[Tuple[float, float, float]]) -> Tuple[float, float
         anchor_xy.append((anchors[i][0], anchors[i][1]))
         dist.append(anchors[i][2])
 
-    x1, y1, d1, ts = anchors[0]
+    x1, y1, d1 = anchors[0]
 
     A = []
     B = []
     # 위치 계산
     for i in range(1, len(anchor_xy)):
-        x2, y2, d2, ts2 = anchors[i]
+        x2, y2, d2 = anchors[i]
         A.append([2*(x2-x1), 2*(y2-y1)])
         B.append(d1**2 - d2**2 + x2**2 - x1**2 + y2**2 - y1**2)
 
