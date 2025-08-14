@@ -5,10 +5,13 @@ import uuid
 import paho.mqtt.client as mqtt
 import json
 import numpy as np
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+
+from config.database import SessionLocal, engine, Base
+
 from starlette.responses import HTMLResponse, StreamingResponse
 from starlette.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
+from datetime import datetime
 
 # mqtt 관련 설정
 BROKER_HOST = "168.188.128.103"   # 예: "broker.example.com" 또는 "127.0.0.1"
@@ -45,17 +48,19 @@ async def lifespan(app: FastAPI):
     yield
     await shutdown()
 
+Base.metadata.create_all(bind=engine)
 app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
 subscribers = set()
 
 
-# STATIC_DIR에 정적 파일 경로 설정
-app.mount("/static", StaticFiles(directory="static"), name="static")
-@app.get("/test")
-async def test():
-    return {"status": "ok"}
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 @app.get("/")
 async def get_map(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -110,6 +115,7 @@ def on_connect(client, userdata, flags ,rc):
 
 # 메시지를 받았을 대 호출되는 콜백
 def on_message(client, userdata, msg):
+
     global app_loop
     try:
         text = msg.payload.decode("utf-8")
@@ -121,8 +127,9 @@ def on_message(client, userdata, msg):
 
         if result is None:
             return
+        print(result)
 
-        anchors: List[Tuple[float, float, float]] = [] # (x,y, dist)
+        anchors: List[Tuple[float, float, float]] = [] # (time, anc_id, x, y, dist)
         for anchor_id, (x, y) in ANCHORS.items():
             if anchor_id in result:
                 dist = float(result[anchor_id]["dist"])
@@ -134,10 +141,14 @@ def on_message(client, userdata, msg):
         x = trial_result[0]
         y = trial_result[1]
 
+        # 프론트엔드로 전달
         if app_loop and x >= 0 and y >= 0:
             asyncio.run_coroutine_threadsafe(
                 publish_coordinates(x, y), app_loop
             )
+
+        # db 저장 - 앵커 아이디, 좌표
+
 
     except UnicodeDecodeError:
         text = repr(msg.payload)
@@ -167,13 +178,13 @@ def trilaterate(anchors: List[Tuple[float, float, float]]) -> Tuple[float, float
         anchor_xy.append((anchors[i][0], anchors[i][1]))
         dist.append(anchors[i][2])
 
-    x1, y1, d1 = anchors[0]
+    x1, y1, d1, ts = anchors[0]
 
     A = []
     B = []
     # 위치 계산
     for i in range(1, len(anchor_xy)):
-        x2, y2, d2 = anchors[i]
+        x2, y2, d2, ts2 = anchors[i]
         A.append([2*(x2-x1), 2*(y2-y1)])
         B.append(d1**2 - d2**2 + x2**2 - x1**2 + y2**2 - y1**2)
 
