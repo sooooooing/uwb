@@ -84,12 +84,7 @@ def db_connect():
 
 
 
-@app.get("/")
-async def get_map(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@app.get("/tag", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def get_tag_location(request: Request):
     dto_list = get_db_data()
     return templates.TemplateResponse("tag.html", {"request": request, "dto_list": dto_list})

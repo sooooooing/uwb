@@ -1,163 +1,129 @@
 <!DOCTYPE html>
-<style>
-    #map {
-        width: 1155px;
-        height: 585px;
-        position: relative;
-    }
-
-    .point {
-        position: absolute;
-        display: inline-block;
-        width: 15px;
-        height: 15px;
-        background: red;
-        border-radius: 50%;
-    }
-
-    .triangle {
-        position: absolute;
-        width: 0px;
-        height: 0px;
-        border-bottom: calc(10px * 1.732) solid blueviolet;
-        border-left: 10px solid transparent;
-        border-right: 10px solid transparent;
-        margin-bottom: 10px;
-
-    }
-
-    .text {
-        position: absolute;
-        display: inline-block;
-        margin-top: 15px;
-        font-size: 15px;
-        min-width: 120px;
-        white-space: nowrap;
-        margin-left: -30px;
-    }
-
-    .tag {
-        position: absolute;
-        display: inline-block;
-        width: 15px;
-        height: 15px;
-        background: orange;
-        border-radius: 50%;
-    }
-
-</style>
-
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>map</title>
-</head>
+  <meta charset="UTF-8">
+  <title>map</title>
+  <style>
+    #map {
+      width: 1155px;
+      height: 585px;
+      position: relative;
+    }
 
+    .point, .triangle, .tag {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .point { background: orange; }
+    .triangle { background: black; border-radius: 20%;}
+    .tag { background: red; }
+
+    .text {
+      position: absolute;
+      font-size: 13px;
+      transform: translate(-50%, 0);
+      margin-top: 18px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+  </style>
+</head>
 
 <body>
 <h2>테스트베드 배치도 (11.55, 5.85)</h2>
 
 <div id="map">
-    <img alt="Map 이미지" height="585" src="/static/map.png" width="1155">
-    <!--앵커 좌표 찍기-->
+  <img alt="Map 이미지" height="585" src="/static/map.png" width="1155">
 
-    <div class="point" id="anc0" style="left: 45px; bottom: 145px;">
-        <h5 class="text">ANC0(0.45, 1.45)</h5>
-    </div>
-    <div class="point" id="anc3" style="left: 705px; bottom: 585px;">
-        <h5 class="text">ANC3(7.05, 5.85)</h5>
-    </div>
-    <div class="point" id="anc4" style="left: 1155px; bottom: 300px;">
-        <h5 class="text">ANC4(11.55, 3.0)</h5>
-    </div>
-    <div class="point" id="anc6" style="left: 705px; bottom: 0px;">
-        <h5 class="text">ANC6(7.05, 0)</h5>
-    </div>
+  <!-- 앵커 -->
+  <div class="point" style="left: 45px; top: 440px;"></div>
+  <div class="text" style="left: 45px; top: 440px;">ANC0(0.45, 1.45)</div>
 
-    <!--ground truth 좌표찍기-->
-    <div class="triangle" id="gt1" style="left: 90px; bottom: 495px;">
-        <h5 class="text">(0.9, 4.95)</h5>
-    </div>
+  <div class="point" style="left: 705px; top: 0px;"></div>
+  <div class="text" style="left: 705px; top: 0px;">ANC3(7.05, 5.85)</div>
 
-    <div class="triangle" id="gt2" style="left: 135px; bottom: 180px;">
-        <h5 class="text">(1.35, 1.8)</h5>
-    </div>
+  <div class="point" style="left: 1155px; top: 285px;"></div>
+  <div class="text" style="left: 1155px; top: 285px;">ANC4(11.55, 3.0)</div>
 
-    <div class="triangle" id="gt3" style="left: 360px; bottom: 270px;">
-        <h5 class="text">(3.6, 2.7)</h5>
-    </div>
+  <div class="point" style="left: 705px; top: 585px;"></div>
+  <div class="text" style="left: 705px; top: 585px;">ANC6(7.05, 0)</div>
 
-    <div class="triangle" id="gt4" style="left: 630px; bottom: 315px;">
-        <h5 class="text">(6.3, 3.15)</h5>
-    </div>
+  <!-- GT -->
+  <div class="triangle" style="left: 90px; top: 90px;"></div>
+  <div class="text" style="left: 90px; top: 90px;">(0.9, 4.95)</div>
 
-    <div class="triangle" id="gt5" style="left: 900px; bottom: 270px;">
-        <h5 class="text">(9.0, 2.7)</h5>
-    </div>
+  <div class="triangle" style="left: 135px; top: 405px;"></div>
+  <div class="text" style="left: 135px; top: 405px;">(1.35, 1.8)</div>
 
-    <div class="triangle" id="gt6" style="left: 1035px; bottom: 270px;">
-    </div>
+  <div class="triangle" style="left: 360px; top: 315px;"></div>
+  <div class="text" style="left: 360px; top: 315px;">(3.6, 2.7)</div>
 
-    <!--동적으로 받아오는 태그의 위치 계속 표시-->
-    <div class="tag" style="left: 100px; bottom: 100px;">
-        <h5 class="text" id="tagText">TAG ()</h5>
-    </div>
+  <div class="triangle" style="left: 630px; top: 270px;"></div>
+  <div class="text" style="left: 630px; top: 270px;">(6.3, 3.15)</div>
+
+  <div class="triangle" style="left: 900px; top: 315px;"></div>
+  <div class="text" style="left: 900px; top: 315px;">(9.0, 2.7)</div>
+
+  <div class="triangle" style="left: 1035px; top: 315px;"></div>
+  <div class="text" style="left: 1035px; top: 315px;">(10.35, 2.7)</div>
+
+  <!-- 태그 점/텍스트 -->
+  <div class="tag" id="tagDot" style="display: none;"></div>
+  <div class="text" id="tagText" style="display: none;">TAG()</div>
 </div>
 
-</body>
-
 <script>
-    const tagEl = document.querySelector(".tag");
-    const tagText = document.getElementById("tagText");
+  const tagDot = document.getElementById("tagDot");
+  const tagText = document.getElementById("tagText");
 
-    tagEl.style.display = "none";
+  const SCALE = 100;
+  const MAP_H_M = 5.85;
 
-    const SCALE = 100;
-    const DOT_R = 7.5;
-    const MAP_W_M = 11.55, MAP_H_M = 5.85;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  function updateMarker(x, y) {
+    x = Number(x);
+    y = Number(y);
 
-    function updateMarker(x, y) {
-
-        x = Number(x);
-        y = Number(y);
-
-        if (Number.isNaN(x) || Number.isNaN(y)) {
-            console.warn("invalid coords:", x, y);
-            return;
-        }
-        if (x < 0 || y < 0) return;
-
-
-        x = clamp(x, 0, MAP_W_M);
-        y = clamp(y, 0, MAP_H_M);
-        const leftPx = x * SCALE - DOT_R;
-        const bottomPx = y * SCALE - DOT_R;
-
-
-        if (tagEl.style.display === "none") tagEl.style.display = "block";
-
-
-        tagEl.style.left = `${leftPx}px`;
-        tagEl.style.bottom = `${bottomPx}px`;
-        tagText.textContent = `TAG (${x.toFixed(2)}, ${y.toFixed(2)})`;
-
-
-        console.log("draw @px:", leftPx, bottomPx, " @m:", x, y);
+    if (Number.isNaN(x) || Number.isNaN(y)) {
+      console.warn("invalid coords:", x, y);
+      return;
     }
 
-    // SSE
-    const es = new EventSource('/sse/tag');
-    es.addEventListener("tag", (ev) => {
-        try {
-            const data = JSON.parse(ev.data);
-            updateMarker(data.x, data.y);
-        } catch (e) {
-            console.warn("bad data", ev.data);
-        }
-    });
+    x = clamp(x, 0, 11.55);
+    y = clamp(y, 0, MAP_H_M);
 
-    es.onerror = () => console.log("SSE 연결 끊김");
+    const leftPx = x * SCALE;
+    const topPx = (MAP_H_M - y) * SCALE;
+
+    tagDot.style.left = `${leftPx}px`;
+    tagDot.style.top = `${topPx}px`;
+    tagText.style.left = `${leftPx}px`;
+    tagText.style.top = `${topPx}px`;
+    tagText.textContent = `TAG (${x.toFixed(2)}, ${y.toFixed(2)})`;
+
+    tagDot.style.display = "block";
+    tagText.style.display = "block";
+
+    console.log("draw @px:", leftPx, topPx, " @m:", x, y);
+  }
+
+  // SSE
+  const es = new EventSource('/sse/tag');
+  es.addEventListener("tag", (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      updateMarker(data.x, data.y);
+    } catch (e) {
+      console.warn("bad data", ev.data);
+    }
+  });
+
+  es.onerror = () => console.log("SSE 연결 끊김");
 </script>
-
+</body>
+</html>
