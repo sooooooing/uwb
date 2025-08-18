@@ -141,7 +141,7 @@ def on_connect(client, userdata, flags ,rc):
 # 메시지를 받았을 대 호출되는 콜백
 def on_message(client, userdata, msg):
 
-    global app_loop, dis0, dis3, dis4, dis6, fin_pos
+    global app_loop
     try:
         text = msg.payload.decode("utf-8")
         try:
@@ -173,19 +173,14 @@ def on_message(client, userdata, msg):
 
 
         dist_map = {k: float(v["dist"]) for k, v in result.items() if "dist" in v}
-        dis0 = dist_map.get("ANC0")
-        dis3 = dist_map.get("ANC3")
-        dis4 = dist_map.get("ANC4")
-        dis6 = dist_map.get("ANC6")
+        dist0 = dist_map.get("ANC0")
+        dist3 = dist_map.get("ANC3")
+        dist4 = dist_map.get("ANC4")
+        dist6 = dist_map.get("ANC6")
 
-
-        def fmt(v):
-            return "NA" if v is None else f"{v:.2f}"
-
-        #print(f"{fin_pos} ANC0={fmt(dis0)} ANC3={fmt(dis3)} ANC4={fmt(dis4)} ANC6={fmt(dis6)}")
 
         #db에 저장
-        insert_db(result_time, fmt(dis0), fmt(dis3), fmt(dis4), fmt(dis6), fin_pos)
+        insert_db(result_time, dist0, dist3, dist4, dist6, fin_pos)
 
 
         # 프론트엔드로 전달
