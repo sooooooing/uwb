@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from contextlib import suppress, asynccontextmanager
 from pathlib import Path
@@ -15,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 import mariadb
 
+from backend.TagDTO import TagDTO
 
 # mqtt 관련 설정
 BROKER_HOST = "168.188.128.103"   # 예: "broker.example.com" 또는 "127.0.0.1"
@@ -68,11 +70,11 @@ load_dotenv()
 def db_connect():
     try:
         conn = mariadb.connect(
-            user="sooing",
-            password="Qwer12345!",
-            host="monet-lab.duckdns.org",
-            port=13306,
-            database="uwb"
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            host=os.getenv("DB_HOST"),
+            port=int(os.getenv("DB_PORT", 13306)),
+            database=os.getenv("DB_NAME")
         )
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
@@ -262,6 +264,14 @@ def insert_db(date, anc0, anc3, anc4, anc6, fin_pos):
     conn.commit()
     conn.close()
 
+
+def get_db_data():
+    conn = db_connect()
+    cursor = conn.cursor(dictionary=True)
+    sql = "SELECT date, anc0, anc3, anc4, anc6, fin_pos FROM tag ORDER BY date DESC LIMIT 10"
+    cursor.execute(sql)
+    results = cursor.fetchall()
+    conn.close()
 
 
 
