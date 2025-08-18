@@ -88,9 +88,11 @@ def db_connect():
 async def get_map(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @app.get("/tag", response_class=HTMLResponse)
 async def get_tag_location(request: Request):
-    return templates.TemplateResponse("tag.html", {"request": request})
+    dto_list = get_db_data()
+    return templates.TemplateResponse("tag.html", {"request": request, "dto_list": dto_list})
 
 
 #SSE 엔드포인트 (구독 전용)
@@ -180,10 +182,10 @@ def on_message(client, userdata, msg):
         def fmt(v):
             return "NA" if v is None else f"{v:.2f}"
 
-        print(f"{fin_pos} ANC0={fmt(dis0)} ANC3={fmt(dis3)} ANC4={fmt(dis4)} ANC6={fmt(dis6)}")
+        #print(f"{fin_pos} ANC0={fmt(dis0)} ANC3={fmt(dis3)} ANC4={fmt(dis4)} ANC6={fmt(dis6)}")
 
         #db에 저장
-        insert_db(result_time, round(dis0, 2), round(dis3, 2), round(dis4, 2), round(dis6, 2), fin_pos)
+        insert_db(result_time, fmt(dis0), fmt(dis3), fmt(dis4), fmt(dis6), fin_pos)
 
 
         # 프론트엔드로 전달
@@ -267,11 +269,16 @@ def insert_db(date, anc0, anc3, anc4, anc6, fin_pos):
 
 def get_db_data():
     conn = db_connect()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True) # 딕셔너리 리스트로 가져오기
     sql = "SELECT date, anc0, anc3, anc4, anc6, fin_pos FROM tag ORDER BY date DESC LIMIT 10"
     cursor.execute(sql)
     results = cursor.fetchall()
     conn.close()
+    dto_list = [TagDTO(**row) for row in results] #모든 row에 대해서 DTO 객체 만들어서 리스트에 넣기
+    return dto_list
+
+
+
 
 
 
