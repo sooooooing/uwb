@@ -1,129 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>map</title>
-  <style>
-    #map {
-      width: 1155px;
-      height: 585px;
-      position: relative;
-    }
+    <meta charset="UTF-8">
+    <title>map</title>
+    <style>
 
-    .point, .triangle, .tag {
-      position: absolute;
-      width: 15px;
-      height: 15px;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-    }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding-top: 20px; /* 상단 여백 */
+            font-family: sans-serif;
+        }
 
-    .point { background: orange; }
-    .triangle { background: black; border-radius: 20%;}
-    .tag { background: red; }
+        #map {
+            width: 1155px;
+            height: 585px;
+            position: relative;
 
-    .text {
-      position: absolute;
-      font-size: 13px;
-      transform: translate(-50%, 0);
-      margin-top: 18px;
-      white-space: nowrap;
-      pointer-events: none;
-    }
-  </style>
+        }
+
+        .point, .ground-truth, .tag {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .point {
+            background: orange;
+        }
+
+        .ground-truth {
+            background: yellowgreen;
+            border-radius: 20%;
+        }
+
+        .tag {
+            background: red;
+        }
+
+        .text {
+            position: absolute;
+            font-size: 15px;
+            transform: translate(-50%, 0);
+            margin-top: 18px;
+            white-space: nowrap;
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        #tagText {
+            color: red;
+            margin-top: 0;
+            margin-bottom: 20px;
+            transform: translate(-50%, -40px);
+        }
+
+    </style>
 </head>
 
 <body>
 <h2>테스트베드 배치도 (11.55, 5.85)</h2>
 
 <div id="map">
-  <img alt="Map 이미지" height="585" src="/static/map.png" width="1155">
+    <img alt="Map 이미지" height="585" src="/static/map.png" width="1155">
 
-  <!-- 앵커 -->
-  <div class="point" style="left: 45px; top: 440px;"></div>
-  <div class="text" style="left: 45px; top: 440px;">ANC0(0.45, 1.45)</div>
 
-  <div class="point" style="left: 705px; top: 0px;"></div>
-  <div class="text" style="left: 705px; top: 0px;">ANC3(7.05, 5.85)</div>
+    <div class="point" style="left: 45px; top: 440px;"></div>
+    <div class="text" style="left: 45px; top: 440px;">ANC0(0.45, 1.45)</div>
 
-  <div class="point" style="left: 1155px; top: 285px;"></div>
-  <div class="text" style="left: 1155px; top: 285px;">ANC4(11.55, 3.0)</div>
+    <div class="point" style="left: 705px; top: 0px;"></div>
+    <div class="text" style="left: 705px; top: 0px;">ANC3(7.05, 5.85)</div>
 
-  <div class="point" style="left: 705px; top: 585px;"></div>
-  <div class="text" style="left: 705px; top: 585px;">ANC6(7.05, 0)</div>
+    <div class="point" style="left: 1155px; top: 285px;"></div>
+    <div class="text" style="left: 1155px; top: 285px;">ANC4(11.55, 3.0)</div>
 
-  <!-- GT -->
-  <div class="triangle" style="left: 90px; top: 90px;"></div>
-  <div class="text" style="left: 90px; top: 90px;">(0.9, 4.95)</div>
+    <div class="point" style="left: 705px; top: 585px;"></div>
+    <div class="text" style="left: 705px; top: 585px;">ANC6(7.05, 0)</div>
 
-  <div class="triangle" style="left: 135px; top: 405px;"></div>
-  <div class="text" style="left: 135px; top: 405px;">(1.35, 1.8)</div>
 
-  <div class="triangle" style="left: 360px; top: 315px;"></div>
-  <div class="text" style="left: 360px; top: 315px;">(3.6, 2.7)</div>
+    <div class="ground-truth" style="left: 90px; top: 90px;"></div>
+    <div class="text" style="left: 90px; top: 90px;">(0.9, 4.95)</div>
 
-  <div class="triangle" style="left: 630px; top: 270px;"></div>
-  <div class="text" style="left: 630px; top: 270px;">(6.3, 3.15)</div>
+    <div class="ground-truth" style="left: 135px; top: 405px;"></div>
+    <div class="text" style="left: 135px; top: 405px;">(1.35, 1.8)</div>
 
-  <div class="triangle" style="left: 900px; top: 315px;"></div>
-  <div class="text" style="left: 900px; top: 315px;">(9.0, 2.7)</div>
+    <div class="ground-truth" style="left: 360px; top: 315px;"></div>
+    <div class="text" style="left: 360px; top: 315px;">(3.6, 2.7)</div>
 
-  <div class="triangle" style="left: 1035px; top: 315px;"></div>
-  <div class="text" style="left: 1035px; top: 315px;">(10.35, 2.7)</div>
+    <div class="ground-truth" style="left: 630px; top: 270px;"></div>
+    <div class="text" style="left: 630px; top: 270px;">(6.3, 3.15)</div>
 
-  <!-- 태그 점/텍스트 -->
-  <div class="tag" id="tagDot" style="display: none;"></div>
-  <div class="text" id="tagText" style="display: none;">TAG()</div>
+    <div class="ground-truth" style="left: 900px; top: 315px;"></div>
+    <div class="text" style="left: 900px; top: 315px;">(9.0, 2.7)</div>
+
+    <div class="ground-truth" style="left: 1035px; top: 315px;"></div>
+    <div class="text" style="left: 1035px; top: 315px;">(10.35, 2.7)</div>
+
+    <div class="text" id="tagText" style="display: none;">TAG()</div>
+
+    <div class="tag" id="tagDot" style="display: none;"></div>
+
 </div>
 
 <script>
-  const tagDot = document.getElementById("tagDot");
-  const tagText = document.getElementById("tagText");
+    const tagDot = document.getElementById("tagDot");
+    const tagText = document.getElementById("tagText");
 
-  const SCALE = 100;
-  const MAP_H_M = 5.85;
+    const SCALE = 100;
+    const MAP_H_M = 5.85;
 
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-  function updateMarker(x, y) {
-    x = Number(x);
-    y = Number(y);
+    function updateMarker(x, y) {
+        x = Number(x);
+        y = Number(y);
 
-    if (Number.isNaN(x) || Number.isNaN(y)) {
-      console.warn("invalid coords:", x, y);
-      return;
+        if (Number.isNaN(x) || Number.isNaN(y)) {
+            console.warn("invalid coords:", x, y);
+            return;
+        }
+
+        x = clamp(x, 0, 11.55);
+        y = clamp(y, 0, MAP_H_M);
+
+        const leftPx = x * SCALE;
+        const topPx = (MAP_H_M - y) * SCALE;
+
+        tagDot.style.left = `${leftPx}px`;
+        tagDot.style.top = `${topPx}px`;
+        tagText.style.left = `${leftPx}px`;
+        tagText.style.top = `${topPx}px`;
+        tagText.textContent = `TAG (${x.toFixed(2)}, ${y.toFixed(2)})`;
+
+        tagDot.style.display = "block";
+        tagText.style.display = "block";
+
+        console.log("draw @px:", leftPx, topPx, " @m:", x, y);
     }
 
-    x = clamp(x, 0, 11.55);
-    y = clamp(y, 0, MAP_H_M);
+    // SSE
+    const es = new EventSource('/sse/tag');
+    es.addEventListener("tag", (ev) => {
+        try {
+            const data = JSON.parse(ev.data);
+            updateMarker(data.x, data.y);
+        } catch (e) {
+            console.warn("bad data", ev.data);
+        }
+    });
 
-    const leftPx = x * SCALE;
-    const topPx = (MAP_H_M - y) * SCALE;
-
-    tagDot.style.left = `${leftPx}px`;
-    tagDot.style.top = `${topPx}px`;
-    tagText.style.left = `${leftPx}px`;
-    tagText.style.top = `${topPx}px`;
-    tagText.textContent = `TAG (${x.toFixed(2)}, ${y.toFixed(2)})`;
-
-    tagDot.style.display = "block";
-    tagText.style.display = "block";
-
-    console.log("draw @px:", leftPx, topPx, " @m:", x, y);
-  }
-
-  // SSE
-  const es = new EventSource('/sse/tag');
-  es.addEventListener("tag", (ev) => {
-    try {
-      const data = JSON.parse(ev.data);
-      updateMarker(data.x, data.y);
-    } catch (e) {
-      console.warn("bad data", ev.data);
-    }
-  });
-
-  es.onerror = () => console.log("SSE 연결 끊김");
+    es.onerror = () => console.log("SSE 연결 끊김");
 </script>
 </body>
 </html>
