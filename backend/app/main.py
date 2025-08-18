@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from contextlib import suppress, asynccontextmanager
 from pathlib import Path
 from typing import Tuple, Dict, List
@@ -6,13 +7,14 @@ import uuid
 import paho.mqtt.client as mqtt
 import json
 import numpy as np
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
-
-from config.database import SessionLocal, engine, Base
-
 from starlette.responses import HTMLResponse, StreamingResponse
 from starlette.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from datetime import datetime
+import mariadb
+
 
 # mqtt 관련 설정
 BROKER_HOST = "168.188.128.103"   # 예: "broker.example.com" 또는 "127.0.0.1"
@@ -54,20 +56,30 @@ async def lifespan(app: FastAPI):
     yield
     await shutdown()
 
-Base.metadata.create_all(bind=engine)
+
 app = FastAPI(lifespan=lifespan)
 subscribers = set()
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
+load_dotenv()
 
-def get_db():
-    db = SessionLocal()
+def db_connect():
     try:
-        yield db
-    finally:
-        db.close()
+        conn = mariadb.connect(
+            user="sooing",
+            password="Qwer12345!",
+            host="monet-lab.duckdns.org",
+            port=13306,
+            database="uwb"
+        )
+    except mariadb.Error as e:
+        print(f"Error connecting to MariaDB Platform: {e}")
+        sys.exit(1)
+    return conn
+
+
 
 
 @app.get("/")
@@ -125,7 +137,7 @@ def on_connect(client, userdata, flags ,rc):
 # 메시지를 받았을 대 호출되는 콜백
 def on_message(client, userdata, msg):
 
-    global app_loop
+    global app_loop, dis0, dis3, dis4, dis6, fin_pos
     try:
         text = msg.payload.decode("utf-8")
         try:
@@ -138,17 +150,39 @@ def on_message(client, userdata, msg):
             return
         print(result)
 
-        anchors: List[Tuple[float, float, float]] = [] # (time, anc_id, x, y, dist)
+
+        data: List[Tuple[str, float]] = [] #(anc_id, distance, datetime)
+        anchors: List[Tuple[float, float, float]] = [] # (x, y, dist)
         for anchor_id, (x, y) in ANCHORS.items():
             if anchor_id in result:
                 dist = float(result[anchor_id]["dist"])
                 anchors.append((x, y, dist))
+                data.append((anchor_id, dist))
+
 
         trial_result = trilaterate(anchors)
         print(trial_result)
 
-        x = trial_result[0]
-        y = trial_result[1]
+        x, y, result_time = trilaterate(anchors)
+        fin_pos = f"({x:.2f}, {y:.2f})"
+
+
+
+        dist_map = {k: float(v["dist"]) for k, v in result.items() if "dist" in v}
+        dis0 = dist_map.get("ANC0")
+        dis3 = dist_map.get("ANC3")
+        dis4 = dist_map.get("ANC4")
+        dis6 = dist_map.get("ANC6")
+
+
+        def fmt(v):
+            return "NA" if v is None else f"{v:.2f}"
+
+        print(f"{fin_pos} ANC0={fmt(dis0)} ANC3={fmt(dis3)} ANC4={fmt(dis4)} ANC6={fmt(dis6)}")
+
+        #db에 저장
+        insert_db(result_time, round(dis0, 2), round(dis3, 2), round(dis4, 2), round(dis6, 2), fin_pos)
+
 
         # 프론트엔드로 전달
         if app_loop and x >= 0 and y >= 0:
@@ -172,16 +206,16 @@ def on_disconnect(client, userdata, rc):
 
 
 # 사변측량
-def trilaterate(anchors: List[Tuple[float, float, float]]) -> Tuple[float, float]:
+def trilaterate(anchors: List[Tuple[float, float, float]]) -> Tuple[float, float, datetime]:
     dist = [] # 앵커별 거리 저장
     anchor_xy: List[Tuple[float, float]] = [] # 앵커 좌표 저장
     x = 0.0
     y = 0.0
-    result: Tuple[float, float] = (x, y)
+    result: Tuple[float, float, datetime] = (x, y, datetime.now())
 
     # 거리가 3개 이하면 계산 불가
     if len(anchors) < 3:
-        return -1, -1
+        return -1, -1, datetime.now()
 
     for i in range(len(anchors)):
         anchor_xy.append((anchors[i][0], anchors[i][1]))
@@ -206,14 +240,36 @@ def trilaterate(anchors: List[Tuple[float, float, float]]) -> Tuple[float, float
 
         x = round(x, 2)
         y = round(y, 2)
-        return x, y
+        return x, y, datetime.now()
     except np.linalg.LinAlgError:
-        return -1, -1
+        return -1, -1, datetime.now()
+
+
+def insert_db(date, anc0, anc3, anc4, anc6, fin_pos):
+    conn = db_connect()
+    cursor = conn.cursor()
+
+    sql = """
+          INSERT INTO tag (date, anc0, anc3, anc4, anc6, fin_pos)
+          VALUES (%s, %s, %s, %s, %s, %s) \
+          """
+
+    if isinstance(date, str):
+        cursor.execute(sql, (date, anc0, anc3, anc4, anc6, fin_pos))
+    else:
+        cursor.execute(sql, (date, anc0, anc3, anc4, anc6, fin_pos))
+
+    conn.commit()
+    conn.close()
+
+
 
 
 async def start():
     global app_loop, mqtt_client
     app_loop = asyncio.get_running_loop()
+
+
 
     mqtt_client = mqtt.Client(client_id=CLIENT_ID, clean_session=True)
     if USERNAME:
